@@ -25,16 +25,21 @@ mongoose.connect('mongodb://localhost:27017/bitfilmsdb', {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-/*app.use(
+app.use(
     cors({
       origin: [
-        'https://api.chernyshova.backend.nomoredomains.rocks',
-        'http://api.chernyshova.backend.nomoredomains.rocks',
+        'https://movies-liz4chernyshova.nomoredomains.work',
+        'http://movies-liz4chernyshova.nomoredomains.work',
+        'https://localhost:3000',
         'http://localhost:3000',
+        'https://178.154.198.147:3000',
+        'http://178.154.198.147:3000',
       ],
+      methods: ['GET', 'PUT', 'POST', 'DELETE'],
+      allowedHeaders: ['Authorization', 'Content-Type'],
       credentials: true,
     }),
-  );*/
+);
 
 app.use(helmet());
 
