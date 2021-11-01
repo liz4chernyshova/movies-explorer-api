@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
-const { NODE_ENV, JWT_SECRET } = process.env;
+//require('dotenv').config();
+const secretKey = require('../utils/constants');
 const Error401 = require('../errors/ErrorAuthorization');
 
 const auth = (req, res, next) => {
@@ -13,7 +13,7 @@ const auth = (req, res, next) => {
     let payload;
 
     try {
-      payload = jwt.verify(token, `${NODE_ENV === 'production' ? JWT_SECRET : 'super-strong-secret'}`);
+      payload = jwt.verify(token, `${secretKey}`);
       req.user = payload;
       next();
     } catch (err) {

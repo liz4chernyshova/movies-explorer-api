@@ -1,21 +1,22 @@
 require('dotenv').config();
+const process = require('process');
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const cors = require('cors');
-const router = require('./middlewares/auth');
+const router = require('./routes/index');
+const mongoURL = require('./utils/constants');
 const errorHandler = require('./middlewares/errorHandler');
+const limiter = require('./middlewares/limiter');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 
 const { PORT = 3000 } = process.env;
 const app = express();
 
-app.use(router);
-
-mongoose.connect('mongodb://localhost:27017/bitfilmsdb', {
+mongoose.connect(mongoURL, {
   useUnifiedTopology: true,
   useNewUrlParser: true,
   useCreateIndex: true,
@@ -42,6 +43,7 @@ app.use(
 );
 
 app.use(helmet());
+app.use(limiter);
 
 app.get('/crash-test', () => {
   setTimeout(() => {
@@ -50,6 +52,7 @@ app.get('/crash-test', () => {
 });
 
 app.use(errors());
+app.use(router);
 app.use(errorLogger); 
 app.use(errorHandler);
 app.use(requestLogger);

@@ -1,9 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
-const { NODE_ENV, JWT_SECRET } = process.env;
-
+const secretKey = require('../utils/constants');
 const User = require('../models/user');
 const Error400 = require('../errors/ErrorBadRequest');
 const Error401 = require('../errors/ErrorAuthorization');
@@ -90,7 +88,7 @@ const login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'super-strong-secret');
+      const token = jwt.sign({ _id: user._id }, secretKey);
       res.cookie('jwt', token, {
         httpOnly: true,
         sameSite: 'none',

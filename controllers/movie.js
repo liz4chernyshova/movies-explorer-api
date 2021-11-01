@@ -1,4 +1,4 @@
-const Movie = require('../models/movie');
+const Movie = require('../models/movie'); 
 const Error400 = require('../errors/ErrorBadRequest');
 const Error403 = require('../errors/ErrorForbidden');
 const Error404 = require('../errors/ErrorNotFound');
