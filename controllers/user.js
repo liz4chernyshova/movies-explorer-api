@@ -1,7 +1,7 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const secretKey = require('../utils/constants');
+const { JWT_SECRET } = require('../utils/constants');
 const User = require('../models/user');
 const Error400 = require('../errors/ErrorBadRequest');
 const Error401 = require('../errors/ErrorAuthorization');
@@ -88,7 +88,7 @@ const login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, secretKey);
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET );
       res.cookie('jwt', token, {
         httpOnly: true,
         sameSite: 'none',

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 //require('dotenv').config();
-const secretKey = require('../utils/constants');
+const { JWT_SECRET } = require('../utils/constants');
 const Error401 = require('../errors/ErrorAuthorization');
 
 const auth = (req, res, next) => {
@@ -13,7 +13,7 @@ const auth = (req, res, next) => {
     let payload;
 
     try {
-      payload = jwt.verify(token, `${secretKey}`);
+      payload = jwt.verify(token, `${JWT_SECRET}`);
       req.user = payload;
       next();
     } catch (err) {

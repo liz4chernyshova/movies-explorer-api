@@ -6,8 +6,8 @@ const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const cors = require('cors');
+const { MONGO_URL }  = require('./utils/constants');
 const router = require('./routes/index');
-const mongoURL = require('./utils/constants');
 const errorHandler = require('./middlewares/errorHandler');
 const limiter = require('./middlewares/limiter');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -16,12 +16,7 @@ const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { PORT = 3000 } = process.env;
 const app = express();
 
-mongoose.connect(mongoURL, {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-});
+mongoose.connect( MONGO_URL, { useUnifiedTopology: true, useNewUrlParser: true });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -51,8 +46,8 @@ app.get('/crash-test', () => {
   }, 0);
 });
 
-app.use(errors());
 app.use(router);
+app.use(errors());
 app.use(errorLogger); 
 app.use(errorHandler);
 app.use(requestLogger);
