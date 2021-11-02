@@ -1,85 +1,77 @@
-const Movie = require('../models/movie'); 
-const Error400 = require('../errors/ErrorBadRequest');
-const Error403 = require('../errors/ErrorForbidden');
-const Error404 = require('../errors/ErrorNotFound');
-const Error500 = require('../errors/ServerError');
+const Movie = require('../models/movie');
+const MovieError = require('../errors/UserError');
 
 const getAllMovies = (req, res, next) => {
-    Movie.find({})
+  Movie.find({})
     .then((movie) => res.status(200).send(movie))
     .catch(() => {
-      next(new Error500('На сервере произошла ошибка.'));
+      next(new MovieError(500));
     });
 };
 
-
 const createMovie = (req, res, next) => {
-    const {
-      country,
-      director,
-      duration,
-      year,
-      description,
-      image,
-      trailer,
-      nameRU,
-      nameEN,
-      thumbnail,
-      movieId,
-    } = req.body;
+  const {
+    country,
+    director,
+    duration,
+    year,
+    description,
+    image,
+    trailer,
+    nameRU,
+    nameEN,
+    thumbnail,
+    movieId,
+  } = req.body;
 
-    const owner = req.user._id;
-  
-    Movie.create({
-      country,
-      director,
-      duration,
-      year,
-      description,
-      image,
-      trailer,
-      nameRU,
-      nameEN,
-      thumbnail,
-      movieId,
-      owner,
-    })
-      .then((movie) => res.status(200).send(movie))
-      .catch((err) => {
+  const owner = req.user._id;
+
+  Movie.create({
+    country,
+    director,
+    duration,
+    year,
+    description,
+    image,
+    trailer,
+    nameRU,
+    nameEN,
+    thumbnail,
+    movieId,
+    owner,
+  })
+    .then((movie) => res.status(200).send(movie))
+    .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new Error400('Переданы некорректные данные'));
+        next(new MovieError(400));
       } else {
-        next(new Error500('На сервере произошла ошибка.'));
+        next(new MovieError(500));
       }
     });
-  };
+};
 
 const deleteMovie = (req, res, next) => {
   Movie.findById(req.params.movieId)
-    .orFail(() => {
-      throw new Error404('Фильм не найден.');
-    })
     .then((movie) => {
-      if (req.user._id !== movie.owner.toString()) {
-        next(new Error403('Доступ запрещен.'));
-      } else {
-        movie.remove();
-        res.status(200).send(movie);
+      if (req.user._id.toString() === movie.owner.toString()) {
+        return movie.remove()
+          .then(() => res.status(200).send(movie));
       }
+      throw new MovieError(403);
     })
     .catch((err) => {
       if (err.message === 'CastError') {
-        next(new Error400('Ошибка в запросе.'));
+        next(new MovieError(400));
       } else if (err.statusCode === 404) {
-        next(new Error404('Фильм не найден.'));
+        next(new MovieError(404));
       } else {
-        next(new Error500('На сервере произошла ошибка.'));
+        next(new MovieError(500));
       }
     });
 };
 
 module.exports = {
-    getAllMovies,
-    createMovie,
-    deleteMovie,
+  getAllMovies,
+  createMovie,
+  deleteMovie,
 };

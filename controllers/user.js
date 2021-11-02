@@ -1,28 +1,17 @@
-require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../utils/constants');
 const User = require('../models/user');
-const Error400 = require('../errors/ErrorBadRequest');
-const Error401 = require('../errors/ErrorAuthorization');
-const Error404 = require('../errors/ErrorNotFound');
-const Error409 = require('../errors/ErrorConflict');
-const Error500 = require('../errors/ServerError');
-
+const UserError = require('../errors/UserError');
 
 const getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
-    .orFail(() => {
-      throw (new Error404('Пользователь не найден'));
-    })
     .then((users) => res.status(200).send(users))
     .catch((err) => {
-      if (err.message === 'CastError') {
-        next(new Error400('Переданы некорректные данные'));
-      } else if (err.statusCode === 404) {
-        next(new Error404('Пользователь не найден'));
+      if (err.statusCode === 404) {
+        next(new UserError(404));
       } else {
-        next(new Error500('Ошибка на сервере.'));
+        next(new UserError(500));
       }
     });
 };
@@ -48,11 +37,11 @@ const createUser = (req, res, next) => {
     }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new Error400('Переданы некорректные данные.'));
+        next(new UserError(400));
       } else if (err.name === 'MongoError' && err.code === 11000) {
-        next(new Error409('Пользователь уже зарегистрирован.'));
+        next(new UserError(409));
       } else {
-        next(new Error500('Ошибка на сервере.'));
+        next(new UserError(500));
       }
     });
 };
@@ -64,31 +53,28 @@ const updateUserInfo = (req, res, next) => {
     { name, email },
     { new: true, runValidators: true })
     .orFail(() => {
-      next(new Error404('Пользователь не найден'));
+      next(new UserError(404));
     })
     .then((user) => res.send({ data: user }))
     .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new Error400('Переданы некорректные данные.'));
+      if (err.name === 'ValidationError') {
+        next(new UserError(400));
       } else if (err.statusCode === 404) {
-        next(new Error404('Пользователь не найден'));
+        next(new UserError(404));
+      } else if (err.name === 'MongoError' && err.statusCode === 409) {
+        next(new UserError(409));
       } else {
-        next(new Error500('Ошибка на сервере.'));
+        next(new UserError(500));
       }
     });
 };
 
-
 const login = (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    throw new Error400('Переданы некорректные данные.');
-  }
-
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, JWT_SECRET );
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET);
       res.cookie('jwt', token, {
         httpOnly: true,
         sameSite: 'none',
@@ -97,19 +83,19 @@ const login = (req, res, next) => {
         .send({ token });
     })
     .catch(() => {
-      throw new Error401('Необходимо авторизоваться.');
+      throw new UserError(401);
     })
     .catch(next);
 };
 
 const signOut = (req, res) => {
-    res.clearCookie('jwt', {
-      httpOnly: true,
-      sameSite: 'none',
-      secure: true,
-    })
-    .then((user) => res.status(200).send(user))
-  };
+  res.clearCookie('jwt', {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+  })
+    .then(() => res.status(200).send({ message: 'Вы вышли из системы' }));
+};
 
 module.exports = {
   createUser,

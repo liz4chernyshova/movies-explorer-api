@@ -5,6 +5,7 @@
       "es2021": true
   },
   "extends": [
+      "airbnb-base",
       "eslint:recommended",
       "plugin:react/recommended"
   ],
@@ -18,5 +19,7 @@
       "react"
   ],
   "rules": {
+    "no-underscore-dangle": ["error", { "allow": ["_id"] }],
+    "linebreak-style": ["error", "windows"]
   }
 }
