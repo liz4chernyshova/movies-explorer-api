@@ -1,8 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../utils/constants');
 const User = require('../models/user');
 const UserError = require('../errors/UserError');
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 const getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
@@ -74,16 +75,12 @@ const login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, JWT_SECRET);
-      res.cookie('jwt', token, {
-        httpOnly: true,
-        sameSite: 'none',
-        secure: true,
-      })
-        .send({ token });
-    })
-    .catch(() => {
-      throw new UserError(401);
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' },
+      );
+
+      res.status(200).send({ token });
     })
     .catch(next);
 };

@@ -1,24 +1,30 @@
-require('dotenv').config();
-const process = require('process');
 const express = require('express');
-const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const helmet = require('helmet');
+const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
+const helmet = require('helmet');
 const cors = require('cors');
-const { MONGO_URL } = require('./utils/constants');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
+const UserError = require('./errors/UserError');
+const limiter = require('./middlewares/limiter');
 const router = require('./routes/index');
 const errorHandler = require('./middlewares/errorHandler');
-const limiter = require('./middlewares/limiter');
-const { requestLogger, errorLogger } = require('./middlewares/logger');
 
-const { PORT = 3000 } = process.env;
 const app = express();
 
-mongoose.connect(MONGO_URL, { useUnifiedTopology: true, useNewUrlParser: true });
+app.use(helmet());
+
+const { PORT = 3000 } = process.env;
+const { DATA_BASE, NODE_ENV } = process.env;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+mongoose.connect(NODE_ENV === 'production' ? DATA_BASE : 'mongodb://localhost:27017/bitfilmsdb', {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+});
 
 app.use(
   cors({
@@ -30,26 +36,22 @@ app.use(
       'https://178.154.198.147:3000',
       'http://178.154.198.147:3000',
     ],
-    methods: ['GET', 'PUT', 'POST', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
 );
 
 app.use(requestLogger);
 
-app.use(helmet());
 app.use(limiter);
 
-app.get('/crash-test', () => {
-  setTimeout(() => {
-    throw new Error('Сервер сейчас упадёт');
-  }, 0);
-});
-
 app.use(router);
+
+router.all('*', (req, res, next) => next(new UserError(404, 'Ресурс не найден')));
+
 app.use(errorLogger);
+
 app.use(errors());
+
 app.use(errorHandler);
 
 app.listen(PORT);
